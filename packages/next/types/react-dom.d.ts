@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 declare module 'react-dom/server-rendering-stub'
 declare module 'react-dom/server.browser'
 

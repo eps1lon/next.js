@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { type JSX } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import {
   OPTIMIZED_FONT_PROVIDERS,
@@ -101,7 +101,7 @@ function hasComponentProps(child: any): child is React.ReactElement {
 function AmpStyles({
   styles,
 }: {
-  styles?: React.ReactElement[] | React.ReactFragment
+  styles?: React.ReactElement[] | Iterable<React.ReactNode>
 }) {
   if (!styles) return null
 
@@ -837,13 +837,10 @@ export class Head extends React.Component<HeadProps> {
             content={React.Children.count(head || []).toString()}
           />
         )}
-
         {children}
         {optimizeFonts && <meta name="next-font-preconnect" />}
-
         {nextFontLinkTags.preconnect}
         {nextFontLinkTags.preload}
-
         {process.env.NEXT_RUNTIME !== 'edge' && inAmpMode && (
           <>
             <meta

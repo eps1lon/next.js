@@ -4,7 +4,7 @@ import type { NEXT_DATA } from './utils'
 import type { FontConfig } from '../../server/font-utils'
 import type { NextFontManifest } from '../../build/webpack/plugins/next-font-manifest-plugin'
 
-import { createContext, useContext } from 'react'
+import { createContext, useContext, type JSX } from 'react'
 
 export type HtmlProps = {
   __NEXT_DATA__: NEXT_DATA
@@ -35,7 +35,7 @@ export type HtmlProps = {
   }
   locale?: string
   disableOptimizedLoading?: boolean
-  styles?: React.ReactElement[] | React.ReactFragment
+  styles?: React.ReactElement[] | Iterable<React.ReactNode>
   head?: Array<JSX.Element | null>
   crossOrigin?: 'anonymous' | 'use-credentials' | '' | undefined
   optimizeCss?: any

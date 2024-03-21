@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 export const DOMAttributeNames: Record<string, string> = {
   acceptCharset: 'accept-charset',
   className: 'class',

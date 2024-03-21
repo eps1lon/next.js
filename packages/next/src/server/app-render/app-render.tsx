@@ -17,7 +17,7 @@ import type { AppPageModule } from '../future/route-modules/app-page/module'
 import type { ClientReferenceManifest } from '../../build/webpack/plugins/flight-manifest-plugin'
 import type { Revalidate } from '../lib/revalidate'
 
-import React from 'react'
+import React, { type JSX } from 'react'
 
 import RenderResult, {
   type AppPageRenderResultMetadata,

@@ -789,7 +789,7 @@ type FulfilledDeferredRsc = Promise<React.ReactNode> & {
   tag: Symbol
 }
 
-type RejectedDeferredRsc = Promise<React.ReactNode> & {
+type RejectedDeferredRsc = Promise<Awaited<React.ReactNode>> & {
   status: 'rejected'
   reason: any
   resolve: (value: React.ReactNode) => void

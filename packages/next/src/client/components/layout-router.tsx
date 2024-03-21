@@ -18,6 +18,7 @@ import React, {
   startTransition,
   Suspense,
   useDeferredValue,
+  type JSX,
 } from 'react'
 import ReactDOM from 'react-dom'
 import {
@@ -563,14 +564,14 @@ export default function OuterLayoutRouter({
 
         return (
           /*
-            - Error boundary
-              - Only renders error boundary if error component is provided.
-              - Rendered for each segment to ensure they have their own error state.
-            - Loading boundary
-              - Only renders suspense boundary if loading components is provided.
-              - Rendered for each segment to ensure they have their own loading state.
-              - Passed to the router during rendering to ensure it can be immediately rendered when suspending on a Flight fetch.
-          */
+          - Error boundary
+            - Only renders error boundary if error component is provided.
+            - Rendered for each segment to ensure they have their own error state.
+          - Loading boundary
+            - Only renders suspense boundary if loading components is provided.
+            - Rendered for each segment to ensure they have their own loading state.
+            - Passed to the router during rendering to ensure it can be immediately rendered when suspending on a Flight fetch.
+        */
           <TemplateContext.Provider
             key={createRouterCacheKey(preservedSegment, true)}
             value={
