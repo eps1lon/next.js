@@ -91,7 +91,9 @@ function walkAddRefetch(
  * Wraps ReactDOM.findDOMNode with additional logic to hide React Strict Mode warning
  */
 function findDOMNode(
+  // @ts-expect-error FIXME: `findDOMNode` was removed in React 19.
   instance: Parameters<typeof ReactDOM.findDOMNode>[0]
+  // @ts-expect-error FIXME: `findDOMNode` was removed in React 19.
 ): ReturnType<typeof ReactDOM.findDOMNode> {
   // Tree-shake for server bundle
   if (typeof window === 'undefined') return null
@@ -105,11 +107,13 @@ function findDOMNode(
           originalConsoleError(...messages)
         }
       }
+      // @ts-expect-error FIXME: `findDOMNode` was removed in React 19.
       return ReactDOM.findDOMNode(instance)
     } finally {
       console.error = originalConsoleError!
     }
   }
+  // @ts-expect-error FIXME: `findDOMNode` was removed in React 19.
   return ReactDOM.findDOMNode(instance)
 }
 

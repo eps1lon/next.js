@@ -524,8 +524,10 @@ function createPendingCacheNode(
 
     // Create a deferred promise. This will be fulfilled once the dynamic
     // response is received from the server.
-    rsc: createDeferredRsc(),
-    head: isLeafSegment ? createDeferredRsc() : null,
+    // TODO: Double check why we need to type-cast here.
+    // It's likely some conflict between the bounded `ReactNode = AwaitedReactNode | Promise<AwaitedReactNode>` and the unbounded `Promise<ReactNode>`
+    rsc: createDeferredRsc() as React.ReactNode,
+    head: isLeafSegment ? (createDeferredRsc() as React.ReactNode) : null,
     lazyDataResolved: false,
   }
 }
