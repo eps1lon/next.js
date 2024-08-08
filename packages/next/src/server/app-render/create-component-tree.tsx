@@ -54,8 +54,6 @@ function errorMissingDefaultExport(pagePath: string, convention: string) {
   )
 }
 
-const cacheNodeKey = 'c'
-
 async function createComponentTreeInternal({
   createSegmentPath,
   loaderTree: tree,
@@ -502,10 +500,10 @@ async function createComponentTreeInternal({
       // identical even without it. But maybe there's some findDOMNode-related
       // reason that I'm not aware of, so I'm leaving it as-is out of extreme
       // caution, for now.
-      <React.Fragment key={cacheNodeKey}>
+      <>
         {layerAssets}
         {parallelRouteProps.children}
-      </React.Fragment>,
+      </>,
       loadingData,
     ]
   }
@@ -528,14 +526,14 @@ async function createComponentTreeInternal({
     return [
       actualSegment,
       parallelRouteCacheNodeSeedData,
-      <React.Fragment key={cacheNodeKey}>
+      <>
         <Postpone
           prerenderState={staticGenerationStore.prerenderState}
           reason='dynamic = "force-dynamic" was used'
           route={staticGenerationStore.route}
         />
         {layerAssets}
-      </React.Fragment>,
+      </>,
       loadingData,
     ]
   }
@@ -620,7 +618,7 @@ async function createComponentTreeInternal({
   return [
     actualSegment,
     parallelRouteCacheNodeSeedData,
-    <React.Fragment key={cacheNodeKey}>
+    <>
       {segmentElement}
       {/* This null is currently critical. The wrapped Component can render null and if there was not fragment
             surrounding it this would look like a pending tree data state on the client which will cause an error
@@ -631,7 +629,7 @@ async function createComponentTreeInternal({
             null it will look like `null` (the array is elided) and this is what confuses the client router.
             TODO-APP update router to use a Symbol for partial tree detection */}
       {null}
-    </React.Fragment>,
+    </>,
     loadingData,
   ]
 }

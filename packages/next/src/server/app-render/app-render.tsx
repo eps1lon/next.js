@@ -171,8 +171,6 @@ interface ParseRequestHeadersOptions {
   readonly isRoutePPREnabled: boolean
 }
 
-const flightDataPathHeadKey = 'h'
-
 interface ParsedRequestHeaders {
   /**
    * Router state provided from the client-side router. Used to handle rendering
@@ -370,11 +368,11 @@ async function generateDynamicRSCPayload(
         isFirst: true,
         // For flight, render metadata inside leaf page
         rscPayloadHead: (
-          <React.Fragment key={flightDataPathHeadKey}>
+          <>
             <NonIndex ctx={ctx} />
             {/* Adding requestId as react key to make metadata remount for each render */}
             <MetadataTree key={requestId} />
-          </React.Fragment>
+          </>
         ),
         injectedCSS: new Set(),
         injectedJS: new Set(),
@@ -524,11 +522,11 @@ async function getRSCPayload(
     typeof varyHeader === 'string' && varyHeader.includes(NEXT_URL)
 
   const initialHead = (
-    <React.Fragment key={flightDataPathHeadKey}>
+    <>
       <NonIndex ctx={ctx} />
       {/* Adding requestId as react key to make metadata remount for each render */}
       <MetadataTree key={ctx.requestId} />
-    </React.Fragment>
+    </>
   )
 
   return {
@@ -541,7 +539,7 @@ async function getRSCPayload(
     f: [[initialTree, seedData, initialHead]],
     m: missingSlots,
     G: GlobalError,
-  } satisfies InitialRSCPayload & { P: React.ReactNode }
+  } satisfies RSCPayload & { P: React.ReactNode }
 }
 
 /**
@@ -581,14 +579,14 @@ async function getErrorRSCPayload(
   })
 
   const initialHead = (
-    <React.Fragment key={flightDataPathHeadKey}>
+    <>
       <NonIndex ctx={ctx} />
       {/* Adding requestId as react key to make metadata remount for each render */}
       <MetadataTree key={requestId} />
       {process.env.NODE_ENV === 'development' && (
         <meta name="next-error" content="not-found" />
       )}
-    </React.Fragment>
+    </>
   )
 
   const initialTree = createFlightRouterStateFromLoaderTree(
