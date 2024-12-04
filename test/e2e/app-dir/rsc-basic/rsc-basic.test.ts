@@ -515,14 +515,7 @@ describe('app dir - rsc basics', () => {
       ]
 
       ssrPagesReactVersions.forEach((version) => {
-        if (isReact18 || isPPREnabledByDefault) {
-          expect(version).not.toMatch(bundledReactVersionPattern)
-        } else {
-          // TODO: Pages router only supports React 19 that is bundled
-          // Once we run with React 19 stable, this branch should be removed in
-          // favor of unconditional `not.toMatch`
-          expect(version).toMatch(bundledReactVersionPattern)
-        }
+        expect(version).not.toMatch(bundledReactVersionPattern)
       })
     })
     await Promise.all(promises)
@@ -556,24 +549,10 @@ describe('app dir - rsc basics', () => {
     `)
 
     browserPagesReactVersions.forEach((version) => {
-      if (isReact18 || isPPREnabledByDefault) {
-        expect(version).not.toMatch(bundledReactVersionPattern)
-      } else {
-        // TODO: Pages router only supports React 19 that is bundled
-        // Once we run with React 19 stable, this branch should be removed in
-        // favor of unconditional `not.toMatch`
-        expect(version).toMatch(bundledReactVersionPattern)
-      }
+      expect(version).not.toMatch(bundledReactVersionPattern)
     })
     browserEdgePagesReactVersions.forEach((version) => {
-      if (isReact18 || isPPREnabledByDefault) {
-        expect(version).not.toMatch(bundledReactVersionPattern)
-      } else {
-        // TODO: Pages router only supports React 19 that is bundled
-        // Once we run with React 19 stable, this branch should be removed in
-        // favor of unconditional `not.toMatch`
-        expect(version).toMatch(bundledReactVersionPattern)
-      }
+      expect(version).not.toMatch(bundledReactVersionPattern)
     })
   })
 
