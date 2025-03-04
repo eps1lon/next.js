@@ -133,7 +133,7 @@ export async function exportPagesPage(
   const validateAmp = async (
     rawAmpHtml: string,
     ampPageName: string,
-    validatorPath: string | undefined
+    validatorPath: string
   ) => {
     const validator = await AmpHtmlValidator.getInstance(validatorPath)
     const result = validator.validateString(rawAmpHtml)
