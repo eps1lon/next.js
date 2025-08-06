@@ -9,8 +9,10 @@ export type ReadyRuntimeError = {
   id: number
   runtime: true
   error: Error & { environmentName?: string }
-  frames: OriginalStackFrame[] | (() => Promise<OriginalStackFrame[]>)
-  componentStackFrames?: ComponentStackFrame[]
+  frames:
+    | readonly OriginalStackFrame[]
+    | (() => Promise<readonly OriginalStackFrame[]>)
+  componentStackFrames: readonly ComponentStackFrame[] | undefined
   type: 'runtime' | 'console' | 'recoverable'
 }
 
@@ -49,6 +51,7 @@ export async function getErrorByType(
     runtime: true,
     error: event.error,
     type: event.type,
+    componentStackFrames: event.componentStackFrames,
   } as const
 
   if ('use' in React) {
@@ -63,9 +66,6 @@ export async function getErrorByType(
         )
       }),
     }
-    if (event.componentStackFrames !== undefined) {
-      readyRuntimeError.componentStackFrames = event.componentStackFrames
-    }
     return readyRuntimeError
   } else {
     const readyRuntimeError: ReadyRuntimeError = {
@@ -76,9 +76,6 @@ export async function getErrorByType(
         getErrorSource(event.error),
         isAppDir
       ),
-    }
-    if (event.componentStackFrames !== undefined) {
-      readyRuntimeError.componentStackFrames = event.componentStackFrames
     }
     return readyRuntimeError
   }
