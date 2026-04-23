@@ -7,7 +7,6 @@ import imageSizeOf from 'next/dist/compiled/image-size'
 import { detector } from 'next/dist/compiled/image-detector/detector.js'
 import isAnimated from 'next/dist/compiled/is-animated'
 import { join } from 'path'
-import nodeUrl, { type UrlWithParsedQuery } from 'url'
 
 import { getImageBlurSvg } from '../shared/lib/image-blur-svg'
 import type { ImageConfigComplete } from '../shared/lib/image-config'
@@ -380,7 +379,7 @@ export class ImageOptimizerCache {
 
   static validateParams(
     req: IncomingMessage,
-    query: UrlWithParsedQuery['query'],
+    query: NextUrlWithParsedQuery['query'],
     nextConfig: NextConfigRuntime,
     isDev: boolean
   ): ImageParamsResult | { errorMessage: string } {
@@ -993,7 +992,11 @@ export async function fetchInternalImage(
       maximumResponseBody,
     })
 
-    await handleRequest(mocked.req, mocked.res, nodeUrl.parse(href, true))
+    await handleRequest(
+      mocked.req,
+      mocked.res,
+      parseUrl(href) as NextUrlWithParsedQuery | undefined
+    )
     await mocked.res.hasStreamed
 
     if (!mocked.res.statusCode) {
