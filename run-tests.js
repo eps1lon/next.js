@@ -250,48 +250,85 @@ const configuredTestTypes = Object.values(testFilters)
 /** @type {Map<string, { output: string, failedCases: string[] }>} */
 const errorsPerTests = new Map()
 
+const CONTRIBUTING_URL =
+  'https://github.com/vercel/next.js/blob/canary/contributing.md'
+// Keep only the tail of each suite's output in the job summary so the
+// overall summary stays below GitHub's 1MiB limit.
+const MAX_SUMMARY_OUTPUT_LENGTH = 65_536
+
+// Strip terminal color/control codes before writing output to the job
+// summary. Mirrors `scripts/pr-ci-comment.mjs`.
+const ANSI_RE =
+  // eslint-disable-next-line no-control-regex
+  /(?:\u001B\][\s\S]*?(?:\u0007|\u001B\\|\u009C))|(?:[\u001B\u009B][[\]()#;?]*(?:\d{1,4}(?:[;:]\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~])/g
+
+// Reconstruct the `pnpm test-*` command for a failed suite from the job's
+// environment. Mirrors `getTestCommand` in `scripts/pr-ci-comment.mjs`,
+// which derives the same information from the CI job name.
+function getSummaryTestCommand(testFile) {
+  const mode = process.env.NEXT_TEST_MODE
+  const isExperimental = process.env.__NEXT_CACHE_COMPONENTS === 'true'
+  const bundler = process.env.IS_TURBOPACK_TEST
+    ? '-turbo'
+    : process.env.NEXT_RSPACK
+      ? '-rspack'
+      : ''
+  const script = mode
+    ? `test-${mode}${isExperimental ? '-experimental' : ''}${bundler}`
+    : 'test'
+  const commandPrefix =
+    process.env.__NEXT_EXPERIMENTAL_PPR === 'true'
+      ? '__NEXT_EXPERIMENTAL_PPR=true '
+      : ''
+
+  return `${commandPrefix}pnpm ${script} ${testFile}`
+}
+
+// Write a job summary using the same format as the PR test report comment
+// (`buildTestReportComment` in `scripts/pr-ci-comment.mjs`), so a truncated
+// comment can refer to the job summary for the full report.
 async function maybeLogSummary() {
   if (process.env.CI && errorsPerTests.size > 0) {
-    const outputTemplate = `
-${Array.from(errorsPerTests.entries())
-  .map(([test, { output }]) => {
-    return `
-<details>
-<summary>${test}</summary>
+    const lines = ['## Failing test suites', '']
 
-\`\`\`
-${output}
-\`\`\`
-
-</details>
-`
-  })
-  .join('\n')}`
-
-    // Build table rows with one row per failed test case
-    const tableRows = []
-    for (const [test, { failedCases }] of errorsPerTests.entries()) {
-      const testLink = `<a href="https://github.com/vercel/next.js/blob/canary/${test}">${test}</a>`
-      if (failedCases.length === 0) {
-        tableRows.push(['Unknown', testLink])
-      } else {
-        for (const caseName of failedCases) {
-          tableRows.push([caseName, testLink])
-        }
-      }
+    if (process.env.GITHUB_SHA) {
+      lines.push(
+        `Commit: ${process.env.GITHUB_SHA} | [About building and testing Next.js](${CONTRIBUTING_URL})`,
+        ''
+      )
     }
 
-    await core.summary
-      .addHeading('Tests failures')
-      .addTable([
-        [
-          { data: 'Test Name', header: true },
-          { data: 'Test Path', header: true },
-        ],
-        ...tableRows,
-      ])
-      .addRaw(outputTemplate)
-      .write()
+    const sortedTests = [...errorsPerTests.keys()].sort()
+    for (const test of sortedTests) {
+      const { output, failedCases } = errorsPerTests.get(test)
+
+      lines.push(`\`${getSummaryTestCommand(test)}\``)
+      for (const caseName of failedCases) {
+        lines.push(`- ${caseName}`)
+      }
+
+      let cleanOutput = output.replace(ANSI_RE, '')
+      if (cleanOutput.length > MAX_SUMMARY_OUTPUT_LENGTH) {
+        cleanOutput = `... truncated ...\n\n${cleanOutput.slice(
+          -MAX_SUMMARY_OUTPUT_LENGTH
+        )}`
+      }
+
+      lines.push(
+        '',
+        '<details>',
+        '<summary>Expand output</summary>',
+        '',
+        '```',
+        cleanOutput,
+        '```',
+        '',
+        '</details>',
+        ''
+      )
+    }
+
+    await core.summary.addRaw(lines.join('\n')).write()
   }
 }
 

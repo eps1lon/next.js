@@ -651,6 +651,7 @@ async function handleBuildAndTestWorkflow({
     failedSuites,
     otherFailures,
     sha: pr.headSha || workflowRun.head_sha,
+    runUrl: workflowRun.html_url,
   })
 
   await github.upsertIssueComment(pr.number, TEST_COMMENT_MARKER, body, [
@@ -737,50 +738,55 @@ function extractDelimitedBlock(logs, start, end) {
   return logs.slice(contentStart, endIndex).trim()
 }
 
-function buildTestReportComment({ failedSuites, otherFailures, sha }) {
+function buildTestReportComment({ failedSuites, otherFailures, sha, runUrl }) {
   const heading =
     failedSuites.length > 0 ? '## Failing test suites' : '## Failing CI jobs'
-  const lines = [
+  const header = [
     TEST_COMMENT_MARKER,
     heading,
     '',
     `Commit: ${sha} | [About building and testing Next.js](${CONTRIBUTING_URL})`,
     '',
-  ]
+  ].join('\n')
 
-  for (const suite of failedSuites.sort((a, b) =>
-    `${a.job.name}:${a.testPath}`.localeCompare(`${b.job.name}:${b.testPath}`)
-  )) {
-    const jobMarker = getJobMarker(suite.job.name)
-    lines.push(jobMarker.start)
-    lines.push(
-      `\`${getTestCommand(suite)}\`${getJobTags(suite.job.name)} ([job](${suite.job.html_url}))`
+  const suiteChunks = failedSuites
+    .sort((a, b) =>
+      `${a.job.name}:${a.testPath}`.localeCompare(`${b.job.name}:${b.testPath}`)
     )
-
-    const sortedGroups = [...suite.groups.keys()].sort()
-    for (const group of sortedGroups) {
-      const fails = suite.groups.get(group)
+    .map((suite) => {
+      const jobMarker = getJobMarker(suite.job.name)
+      const lines = [jobMarker.start]
       lines.push(
-        `- ${fails
-          .map((fail) => formatFailureLine(suite, group, fail))
-          .join('\n- ')}`
+        `\`${getTestCommand(suite)}\`${getJobTags(suite.job.name)} ([job](${suite.job.html_url}))`
       )
-    }
 
-    if (suite.resultMessage) {
+      const sortedGroups = [...suite.groups.keys()].sort()
+      for (const group of sortedGroups) {
+        const fails = suite.groups.get(group)
+        lines.push(
+          `- ${fails
+            .map((fail) => formatFailureLine(suite, group, fail))
+            .join('\n- ')}`
+        )
+      }
+
+      if (suite.resultMessage) {
+        lines.push('')
+        lines.push('<details>')
+        lines.push('<summary>Expand output</summary>')
+        lines.push('')
+        lines.push(suite.resultMessage)
+        lines.push('</details>')
+      }
+
+      lines.push(jobMarker.end)
       lines.push('')
-      lines.push('<details>')
-      lines.push('<summary>Expand output</summary>')
-      lines.push('')
-      lines.push(suite.resultMessage)
-      lines.push('</details>')
-    }
+      return lines.join('\n')
+    })
 
-    lines.push(jobMarker.end)
-    lines.push('')
-  }
-
+  let otherFailuresChunk = null
   if (otherFailures.length > 0) {
+    const lines = []
     if (failedSuites.length > 0) {
       lines.push('### Other failing CI jobs')
       lines.push('')
@@ -793,9 +799,43 @@ function buildTestReportComment({ failedSuites, otherFailures, sha }) {
         `- [${job.name}](${job.html_url})${reason ? `: ${reason}` : ''}`
       )
     }
+    otherFailuresChunk = lines.join('\n')
   }
 
-  return lines.join('\n')
+  const chunks = [
+    ...suiteChunks,
+    ...(otherFailuresChunk !== null ? [otherFailuresChunk] : []),
+  ]
+
+  // Drop whole trailing suites instead of slicing mid-suite when the comment
+  // would exceed the size limit. The job summaries render the same report,
+  // so a shortened comment can refer to them for the omitted suites.
+  const truncationNotice = (omitted) =>
+    `_${omitted} failing test suite(s) were omitted because the comment got too long. See the [job summaries of the workflow run](${runUrl}) for the full report._`
+  const budget =
+    MAX_COMMENT_LENGTH - `\n${truncationNotice(failedSuites.length)}`.length
+
+  const parts = [header]
+  let length = header.length
+  let omittedSuites = 0
+
+  for (const [index, chunk] of chunks.entries()) {
+    if (length + chunk.length + 1 > budget) {
+      if (index < suiteChunks.length) {
+        omittedSuites += 1
+      }
+      continue
+    }
+
+    parts.push(chunk)
+    length += chunk.length + 1
+  }
+
+  if (omittedSuites > 0) {
+    parts.push(truncationNotice(omittedSuites))
+  }
+
+  return parts.join('\n')
 }
 
 function formatFailureLine(suite, group, fail) {
